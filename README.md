@@ -1,8 +1,9 @@
 # story_app
 
 
-##Model - View - View Model
-##Android Hilt
-##Flow
-##Retrofit
-##Data Store
+- Info  
+   - Model - View - View Model
+   - Android Hilt
+   - Kotlin Flow
+   - Retrofit
+   - Data Store
