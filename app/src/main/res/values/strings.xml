@@ -1,0 +1,22 @@
+<resources>
+    <string name="app_name">Story App</string>
+    <string name="tvlogin">Login</string>
+    <string name="email_address">Email</string>
+    <string name="password">Password</string>
+    <string name="wording_error_password">Password of at least 6 characters</string>
+    <string name="login">Login</string>
+    <string name="story_app">Story App</string>
+    <string name="register">Register</string>
+    <string name="full_name">Name</string>
+    <string name="error_email_format">Invalid email format</string>
+    <string name="don_t_have_an_account">Don’t have an account ? Register Now</string>
+    <string name="have_account">Already have an acoount ? Login Here</string>
+    <string name="log_out">Logout</string>
+    <string name="are_you_sure">Are you sure?</string>
+    <string name="yes">Yes</string>
+    <string name="no">No</string>
+    <string name="from_gallery">From gallery</string>
+    <string name="take_photo">Take Photo</string>
+    <string name="add_story">Add Story</string>
+    <string name="add_description">description</string>
+</resources>
