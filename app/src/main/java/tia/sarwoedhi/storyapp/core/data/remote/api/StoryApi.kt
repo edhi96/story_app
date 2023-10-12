@@ -10,7 +10,10 @@ import tia.sarwoedhi.storyapp.core.data.entities.response.StoriesResponse
 interface StoryApi {
 
     @GET("stories")
-   suspend fun getListStory(@Header("Authorization") auth:String): Response<StoriesResponse>
+   suspend fun getListStory(@Header("Authorization") auth:String,
+                            @Query("page") page: Int? = null,
+                            @Query("size") size: Int? = null,
+                            @Query("location") location: Int? = null): Response<StoriesResponse>
 
     @Multipart
     @POST("stories")
@@ -18,5 +21,8 @@ interface StoryApi {
         @Header("Authorization") auth:String,
         @Part file: MultipartBody.Part,
         @Part("description") description: RequestBody,
+        @Part("lat") latitude: RequestBody,
+        @Part("lon") longitude: RequestBody,
     ): Response<BaseResponse>
+
 }

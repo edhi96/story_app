@@ -8,10 +8,18 @@ import tia.sarwoedhi.storyapp.core.data.entities.response.BaseResponse
 import tia.sarwoedhi.storyapp.core.data.entities.response.StoriesResponse
 
 interface StoryRemoteDataSource {
-    suspend fun getAllStories(): Flow<Resource<StoriesResponse>>
+    suspend fun getAllStories(
+        page: Int? = null,
+        pageSize: Int? = null
+    ): Flow<Resource<StoriesResponse>>
+
+    suspend fun getAllStoriesWithLocationResponse(): Flow<Resource<StoriesResponse>>
+
     suspend fun addStory(
         imageMultipart: MultipartBody.Part,
-        description: RequestBody
+        description: RequestBody,
+        longitude: RequestBody,
+        latitude: RequestBody
     ): Flow<Resource<BaseResponse>>
 
 }

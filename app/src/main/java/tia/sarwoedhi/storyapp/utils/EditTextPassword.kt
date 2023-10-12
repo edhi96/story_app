@@ -32,7 +32,7 @@ class EditTextPassword : TextInputEditText {
             override fun afterTextChanged(p0: Editable?) {}
 
             override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
-                if (s?.isNotEmpty() == true && s.length < 6){
+                if (s?.isNotEmpty() == true && s.length < 8){
                     error = context.getString(R.string.wording_error_password)
                 }
             }

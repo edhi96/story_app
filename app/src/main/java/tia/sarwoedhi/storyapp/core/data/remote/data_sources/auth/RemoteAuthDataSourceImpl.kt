@@ -10,6 +10,7 @@ import tia.sarwoedhi.storyapp.core.data.entities.request.BodyRegister
 import tia.sarwoedhi.storyapp.core.data.entities.response.BaseResponse
 import tia.sarwoedhi.storyapp.core.data.entities.response.LoginResponse
 import tia.sarwoedhi.storyapp.core.data.remote.api.AuthApi
+import tia.sarwoedhi.storyapp.utils.Utils.getErrorMessage
 import javax.inject.Inject
 
 class RemoteAuthDataSourceImpl @Inject constructor(private val authApi: AuthApi) : RemoteAuthDataSource {
@@ -20,7 +21,7 @@ class RemoteAuthDataSourceImpl @Inject constructor(private val authApi: AuthApi)
             if (response.isSuccessful) {
                 emit(Resource.Success(response.body()))
             } else {
-                emit(Resource.Error(response.message()))
+                emit(Resource.Error(response.getErrorMessage()))
             }
         }catch (e: Exception) {
             emit(Resource.Error((e.message ?: "").toString()))
@@ -34,9 +35,9 @@ class RemoteAuthDataSourceImpl @Inject constructor(private val authApi: AuthApi)
             if (response.isSuccessful) {
                 emit(Resource.Success(null))
             } else {
-                emit(Resource.Error(response.message()))
+                emit(Resource.Error(response.getErrorMessage()))
             }
-        } catch (e: Exception) {
+         } catch (e: Exception) {
             emit(Resource.Error((e.message ?: "").toString()))
         }
     }.flowOn(Dispatchers.IO)

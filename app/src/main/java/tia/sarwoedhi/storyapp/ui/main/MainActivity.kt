@@ -4,7 +4,6 @@ import android.app.Activity
 import android.content.Context
 import android.content.Intent
 import android.os.Bundle
-import android.util.Log
 import android.view.Menu
 import android.view.MenuItem
 import android.view.View
@@ -13,16 +12,23 @@ import androidx.activity.viewModels
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityOptionsCompat
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.flowWithLifecycle
+import androidx.lifecycle.lifecycleScope
+import androidx.paging.LoadState
+import androidx.paging.PagingData
+import androidx.paging.cachedIn
 import dagger.hilt.android.AndroidEntryPoint
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
+import kotlinx.coroutines.flow.launchIn
+import kotlinx.coroutines.flow.onEach
 import tia.sarwoedhi.storyapp.R
+import tia.sarwoedhi.storyapp.core.data.entities.StoryEntity
 import tia.sarwoedhi.storyapp.databinding.ActivityMainBinding
-import tia.sarwoedhi.storyapp.domain.entities.Story
 import tia.sarwoedhi.storyapp.ui.add_story.AddStoryActivity
 import tia.sarwoedhi.storyapp.ui.login.LoginActivity
+import tia.sarwoedhi.storyapp.ui.main.adapter.LoadingStateAdapter
 import tia.sarwoedhi.storyapp.ui.main.adapter.StoryAdapter
+import tia.sarwoedhi.storyapp.ui.maps.MapsActivity
 import tia.sarwoedhi.storyapp.utils.UiState
 
 @AndroidEntryPoint
@@ -37,12 +43,11 @@ class MainActivity : AppCompatActivity() {
     private val mainViewModel: MainViewModel by viewModels()
     private lateinit var binding: ActivityMainBinding
     private lateinit var storyAdapter: StoryAdapter
-    private val listStory = mutableListOf<Story>()
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
-        supportActionBar?.title = "Home"
+        supportActionBar?.title = getString(R.string.home)
         setupView()
         nextPage()
     }
@@ -52,53 +57,45 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun setupView() {
-        storyAdapter = StoryAdapter(listStory)
-        CoroutineScope(Dispatchers.Main).launch {
-            mainViewModel.getListStory().observe(this@MainActivity, ::storiesResponse)
+        storyAdapter = StoryAdapter()
+        mainViewModel.getListStory()
+        mainViewModel.stories.flowWithLifecycle(lifecycle, Lifecycle.State.STARTED)
+            .onEach { resource ->
+                storiesResponse(resource)
+            }.cachedIn(lifecycleScope).launchIn(lifecycleScope)
+
+        storyAdapter.addLoadStateListener { loadState ->
+            with(binding) {
+                if (loadState.mediator?.refresh !is LoadState.Loading) {
+                    val error = when {
+                        loadState.mediator?.prepend is LoadState.Error -> loadState.mediator?.prepend as LoadState.Error
+                        loadState.mediator?.append is LoadState.Error -> loadState.mediator?.append as LoadState.Error
+                        loadState.mediator?.refresh is LoadState.Error -> loadState.mediator?.refresh as LoadState.Error
+                        else -> null
+                    }
+                    error?.let {
+                        if (storyAdapter.snapshot().isEmpty()) {
+                            binding.tvMessage.visibility = View.VISIBLE
+                            binding.tvMessage.text = it.error.localizedMessage
+                        }
+                    }
+                }
+            }
         }
         with(binding.rvStory) {
             setHasFixedSize(true)
-            adapter = storyAdapter
+            isNestedScrollingEnabled = true
+            adapter = storyAdapter.withLoadStateFooter(
+                footer = LoadingStateAdapter {
+                    storyAdapter.retry()
+                }
+            )
         }
     }
 
-
-    override fun onPause() {
-        super.onPause()
-        Log.d("hasil","pause!")
-    }
-
-    override fun onResume() {
-        super.onResume()
-        Log.d("hasil","onResume!")
-    }
-
-    override fun onStop() {
-        super.onStop()
-        Log.d("hasil","onStop!")
-    }
-
-    override fun onDestroy() {
-        super.onDestroy()
-        Log.d("hasil","Destroyed!")
-    }
-
-
-    private fun storiesResponse(resource: UiState<List<Story>>?) {
-        when (resource) {
-            is UiState.Success -> {
-                showLoading(false)
-                resource.data?.let { listStory.addAll(it) }
-                storyAdapter.notifyDataSetChanged()
-            }
-            is UiState.Error -> {
-                showLoading(false)
-                Toast.makeText(this, resource.error, Toast.LENGTH_LONG).show()
-            }
-            is UiState.Loading -> {
-                showLoading(true)
-            }
-            else -> {}
+    private fun storiesResponse(resource: PagingData<StoryEntity>?) {
+        resource?.let {
+            storyAdapter.submitData(lifecycle, it)
         }
     }
 
@@ -111,10 +108,22 @@ class MainActivity : AppCompatActivity() {
                     .toBundle()
             )
         }
+
+        binding.fabMaps.setOnClickListener {
+            val intent = Intent(this, MapsActivity::class.java)
+            startActivity(
+                intent,
+                ActivityOptionsCompat.makeSceneTransitionAnimation(this@MainActivity as Activity)
+                    .toBundle()
+            )
+        }
     }
 
     private fun showLoading(isLoading: Boolean) {
+        binding.progressBar.alpha = if (isLoading) 1.0f else 0.0f
+        binding.tvMessage.alpha = if (isLoading) 0.0f else 1.0f
         binding.progressBar.visibility = if (isLoading) View.VISIBLE else View.GONE
+        binding.tvMessage.visibility = if (isLoading) View.GONE else View.VISIBLE
     }
 
     override fun onCreateOptionsMenu(menu: Menu): Boolean {
@@ -145,22 +154,23 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun logout() {
-        mainViewModel.logOut().observe(this) { resource ->
-            when (resource) {
-                is UiState.Success -> {
-                    startActivity(Intent(this, LoginActivity::class.java))
-                    finishAffinity()
+        mainViewModel.logOut()
+        mainViewModel.loginState.flowWithLifecycle(lifecycle, Lifecycle.State.STARTED)
+            .onEach { resource ->
+                when (resource) {
+                    is UiState.Success -> {
+                        startActivity(Intent(this, LoginActivity::class.java))
+                        finishAffinity()
+                    }
+                    is UiState.Error -> {
+                        showLoading(false)
+                        Toast.makeText(this, resource.error, Toast.LENGTH_LONG).show()
+                    }
+                    is UiState.Loading -> {
+                        showLoading(true)
+                    }
+                    else -> {}
                 }
-                is UiState.Error -> {
-                    showLoading(false)
-                    Toast.makeText(this, resource.error, Toast.LENGTH_LONG).show()
-                }
-                is UiState.Loading -> {
-                    showLoading(true)
-                }
-                else -> {}
-            }
-        }
-
+            }.launchIn(lifecycleScope)
     }
 }

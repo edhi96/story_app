@@ -1,16 +1,14 @@
 package tia.sarwoedhi.storyapp.ui.splash
 
-import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
-import android.util.Log
 import androidx.activity.viewModels
+import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.lifecycleScope
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import tia.sarwoedhi.storyapp.core.data.Resource
 import tia.sarwoedhi.storyapp.databinding.ActivitySplashBinding
 import tia.sarwoedhi.storyapp.ui.login.LoginActivity
 import tia.sarwoedhi.storyapp.ui.main.MainActivity

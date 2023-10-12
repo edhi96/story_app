@@ -11,19 +11,37 @@ import tia.sarwoedhi.storyapp.core.data.entities.response.BaseResponse
 import tia.sarwoedhi.storyapp.core.data.entities.response.StoriesResponse
 import tia.sarwoedhi.storyapp.core.data.local.data_store_local.DataStoreInterface
 import tia.sarwoedhi.storyapp.core.data.remote.api.StoryApi
+import tia.sarwoedhi.storyapp.utils.Utils.getErrorMessage
 import javax.inject.Inject
 
-class StoryRemoteDataSourceImpl @Inject constructor(private val storyApi: StoryApi, private val dataStoreInterface: DataStoreInterface) :
+class StoryRemoteDataSourceImpl @Inject constructor(private val storyApi: StoryApi,
+                                                    private val dataStoreInterface: DataStoreInterface) :
     StoryRemoteDataSource {
 
-    override suspend fun getAllStories(): Flow<Resource<StoriesResponse>> = flow {
+    override suspend fun getAllStories(page:Int?, pageSize:Int?): Flow<Resource<StoriesResponse>> = flow {
         try {
             dataStoreInterface.getTokenKey().collect {
-                val result = storyApi.getListStory("Bearer $it")
+                val result = storyApi.getListStory("Bearer $it",page = page, size = pageSize)
                 if (result.isSuccessful) {
                     emit(Resource.Success(result.body()))
                 } else {
-                    emit(Resource.Error(result.message()))
+                    emit(Resource.Error(result.getErrorMessage()))
+                }
+            }
+
+        } catch (e: Exception) {
+            emit(Resource.Error((e.message ?: "").toString()))
+        }
+    }.flowOn(Dispatchers.IO)
+
+    override suspend fun getAllStoriesWithLocationResponse(): Flow<Resource<StoriesResponse>> = flow {
+        try {
+            dataStoreInterface.getTokenKey().collect {
+                val result = storyApi.getListStory("Bearer $it", location = 1)
+                if (result.isSuccessful) {
+                    emit(Resource.Success(result.body()))
+                } else {
+                    emit(Resource.Error(result.getErrorMessage()))
                 }
             }
 
@@ -34,15 +52,17 @@ class StoryRemoteDataSourceImpl @Inject constructor(private val storyApi: StoryA
 
     override suspend fun addStory(
         imageMultipart: MultipartBody.Part,
-        description: RequestBody
+        description: RequestBody,
+        longitude:RequestBody,
+        latitude:RequestBody
     ): Flow<Resource<BaseResponse>> = flow {
         try {
             dataStoreInterface.getTokenKey().collect {
-                val result = storyApi.addStory("Bearer $it",imageMultipart, description)
+                val result = storyApi.addStory("Bearer $it",imageMultipart, description, latitude= latitude, longitude= longitude)
                 if (result.isSuccessful) {
                     emit(Resource.Success(result.body()))
                 } else {
-                    emit(Resource.Error(result.message()))
+                    emit(Resource.Error(result.getErrorMessage()))
                 }
             }
 

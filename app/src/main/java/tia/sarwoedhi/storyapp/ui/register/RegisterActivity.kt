@@ -8,14 +8,18 @@ import android.os.Build
 import android.os.Bundle
 import android.text.Editable
 import android.text.TextWatcher
-import android.util.Log
 import android.view.View
 import android.view.WindowInsets
 import android.view.WindowManager
 import android.widget.Toast
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.flowWithLifecycle
+import androidx.lifecycle.lifecycleScope
 import dagger.hilt.android.AndroidEntryPoint
+import kotlinx.coroutines.flow.launchIn
+import kotlinx.coroutines.flow.onEach
 import tia.sarwoedhi.storyapp.core.data.entities.response.BaseResponse
 import tia.sarwoedhi.storyapp.databinding.ActivityRegisterBinding
 import tia.sarwoedhi.storyapp.ui.login.LoginActivity
@@ -95,7 +99,10 @@ class RegisterActivity : AppCompatActivity() {
             }
         })
         binding.btnRegister.setOnClickListener {
-            registerViewModel.register(email, password, name).observe(this@RegisterActivity, ::registerResponse)
+            registerViewModel.register(email, password, name)
+            registerViewModel.registerState.flowWithLifecycle(lifecycle, Lifecycle.State.STARTED)
+                .onEach { registerResponse(it) }
+                .launchIn(lifecycleScope)
         }
 
         binding.haveAccount.setOnClickListener {

@@ -1,0 +1,52 @@
+
+
+1.Ketika berhasil register user. (Register View Model Test)
+Memastikan mengembalikan Result.Success.
+
+2.Ketika gagal register data user. (Register View Model Test)
+Memastikan mengembalikan Result.Error.
+
+3.Ketika berhasil login user. (Login View Model Test)
+Memastikan mengembalikan Result.Success.
+ 
+4.Ketika gagal login data user. (Login View Model Test)
+Memastikan mengembalikan Result.Error.
+
+5.Ketika berhasil add story user. (Add Story View Model Test)
+Memastikan mengembalikan Result.Success.
+
+6.Ketika gagal add story user. (Add Story View Model Test)
+Memastikan mengembalikan Result.Error.
+
+7.Ketika berhasil get list story with location. (Maps View Model Test)
+Memastikan mengembalikan Result.Success.
+
+8.Ketika berhasil get list story dengan pagination. (Home View Model Test)
+Memastikan data tidak null
+Memastikan size data sama dengan ekspetasi
+
+9.Ketika berhasil daftar (Auth Repository)
+Memastikan response daftar sesuai
+Memastikan data response tidak null
+
+10.Ketika berhasil daftar (Auth Repository)
+Memastikan response daftar sesuai
+Memastikan data response daftar tidak null
+
+11.Ketika berhasil login (Auth Repository)
+Memastikan response login sesuai
+Memastikan data response login tidak null
+
+12.Ketika berhasil get list story with location (Story Repository)
+Memastikan mengembalikan Result.Success.
+Memastikan data story sama dengan ekspetasi
+
+13.Ketika gagal get list story with location. (Story Repository))
+Memastikan mengembalikan Result.Error.
+
+14.Ketika berhasil add story (Story Repository)
+Memastikan mengembalikan Result.Success.
+Memastikan data response sama dengan ekspetasi
+
+15.Ketika gagal add story. (Story Repository))
+Memastikan mengembalikan Result.Error.

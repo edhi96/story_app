@@ -4,8 +4,9 @@ import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
 import com.bumptech.glide.Glide
 import dagger.hilt.android.AndroidEntryPoint
+import tia.sarwoedhi.storyapp.R
+import tia.sarwoedhi.storyapp.core.data.entities.StoryEntity
 import tia.sarwoedhi.storyapp.databinding.ActivityDetailStoryBinding
-import tia.sarwoedhi.storyapp.domain.entities.Story
 import tia.sarwoedhi.storyapp.utils.Constant.EXTRA_STORY
 
 @AndroidEntryPoint
@@ -16,18 +17,18 @@ class DetailStoryActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         binding = ActivityDetailStoryBinding.inflate(layoutInflater)
         setContentView(binding.root)
-        supportActionBar?.title = "Detail Story"
+        supportActionBar?.title = getString(R.string.detail_story)
         setDetail()
     }
 
     private fun setDetail() {
-        val detail = intent.getParcelableExtra<Story>(EXTRA_STORY)
+        val detail = intent.getParcelableExtra<StoryEntity>(EXTRA_STORY)
 
         binding.apply {
-            tvName.text = detail?.title
+            tvName.text = detail?.name
             tvDesc.text = detail?.description
-            tvDate.text = detail?.date
-            Glide.with(this@DetailStoryActivity).load(detail?.image).into(ivStory)
+            tvDate.text = detail?.createdAt
+            Glide.with(this@DetailStoryActivity).load(detail?.photoUrl).into(ivStory)
         }
     }
 }

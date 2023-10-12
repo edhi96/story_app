@@ -8,5 +8,5 @@ data class StoriesResponse(
     val error: Boolean?,
     @SerializedName("message")
     val message: String?,
-    @SerializedName("listStory") var listStory: ArrayList<StoryEntity> = arrayListOf()
+    @SerializedName("listStory") var listStory: MutableList<StoryEntity> = mutableListOf()
 )

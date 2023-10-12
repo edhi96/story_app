@@ -14,7 +14,12 @@ import android.view.WindowManager
 import android.widget.Toast
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.flowWithLifecycle
+import androidx.lifecycle.lifecycleScope
 import dagger.hilt.android.AndroidEntryPoint
+import kotlinx.coroutines.flow.launchIn
+import kotlinx.coroutines.flow.onEach
 import tia.sarwoedhi.storyapp.core.data.entities.response.LoginResponse
 import tia.sarwoedhi.storyapp.databinding.ActivityLoginBinding
 import tia.sarwoedhi.storyapp.ui.main.MainActivity
@@ -80,7 +85,10 @@ class LoginActivity : AppCompatActivity() {
         })
 
         binding.btnLogin.setOnClickListener {
-            loginViewModel.login(email, password).observe(this@LoginActivity, ::loginResponse)
+            loginViewModel.login(email, password)
+            loginViewModel.loginState.flowWithLifecycle(lifecycle, Lifecycle.State.STARTED)
+                .onEach { loginResponse(it) }
+                .launchIn(lifecycleScope)
         }
 
         binding.dontHaveAccount.setOnClickListener {

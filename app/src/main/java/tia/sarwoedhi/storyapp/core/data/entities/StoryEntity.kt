@@ -1,12 +1,17 @@
 package tia.sarwoedhi.storyapp.core.data.entities
 
 import android.os.Parcelable
+import androidx.room.Entity
+import androidx.room.Index
+import androidx.room.PrimaryKey
 import com.google.gson.annotations.SerializedName
 import kotlinx.parcelize.Parcelize
 
 
 @Parcelize
+@Entity(tableName = "stories", indices = [Index(value = ["id"], unique = true)])
 data class StoryEntity(
+    @PrimaryKey(autoGenerate = false)
     @SerializedName("id")
     val id: String,
     @SerializedName("name")

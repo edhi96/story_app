@@ -1,11 +1,12 @@
 package tia.sarwoedhi.storyapp.core.data.remote.api
 
 import retrofit2.Response
-import retrofit2.http.*
+import retrofit2.http.Body
+import retrofit2.http.POST
 import tia.sarwoedhi.storyapp.core.data.entities.request.BodyLogin
 import tia.sarwoedhi.storyapp.core.data.entities.request.BodyRegister
-import tia.sarwoedhi.storyapp.core.data.entities.response.LoginResponse
 import tia.sarwoedhi.storyapp.core.data.entities.response.BaseResponse
+import tia.sarwoedhi.storyapp.core.data.entities.response.LoginResponse
 
 interface AuthApi {
 

@@ -14,9 +14,10 @@ import tia.sarwoedhi.storyapp.core.data.repositories.story.StoryRepositoryImpl
 abstract class StoryBindModule {
 
     @Binds
-    abstract fun bindStoryRemoteDataSource(impl: StoryRemoteDataSourceImpl): StoryRemoteDataSource
+    abstract fun bindStoryRemoteDataSourceImpl(impl: StoryRemoteDataSourceImpl): StoryRemoteDataSource
 
     @Binds
     abstract fun bindStoryRepositoryImpl(impl: StoryRepositoryImpl): StoryRepository
+
 
 }

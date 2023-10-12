@@ -13,9 +13,9 @@ import javax.inject.Inject
 
 class AddStoryUseCase @Inject constructor(private val storyRepository: StoryRepository) {
     operator fun invoke(
-        imageMultipart: MultipartBody.Part, description: RequestBody
-    ): Flow<UiState<BaseResponse>> = flow {
-        storyRepository.addStory(imageMultipart, description).onStart {
+        imageMultipart: MultipartBody.Part, description: RequestBody, latitude : RequestBody, longitude : RequestBody):
+            Flow<UiState<BaseResponse>> = flow {
+        storyRepository.addStory(imageMultipart, description, latitude=latitude, longitude=longitude).onStart {
             emit(UiState.Loading)
         }.collect { response ->
             when (response) {

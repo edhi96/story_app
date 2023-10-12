@@ -34,12 +34,12 @@ object NetworkService {
             addInterceptor(AcceptInterceptor())
             addInterceptor(ContentTypeInterceptor())
             addInterceptor(FormInterceptor())
-            addInterceptor(HttpLoggingInterceptor().apply {
-                level = if (BuildConfig.DEBUG)
-                    HttpLoggingInterceptor.Level.BODY
-                else
-                    HttpLoggingInterceptor.Level.NONE
-            })
+//            addInterceptor(HttpLoggingInterceptor().apply {
+//                level = if (BuildConfig.DEBUG)
+//                    HttpLoggingInterceptor.Level.BODY
+//                else
+//                    HttpLoggingInterceptor.Level.NONE
+//            })
             readTimeout(60, TimeUnit.SECONDS)
             writeTimeout(60, TimeUnit.SECONDS)
             connectTimeout(60, TimeUnit.SECONDS)

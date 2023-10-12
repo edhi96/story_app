@@ -4,6 +4,7 @@ import android.Manifest
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.graphics.BitmapFactory
+import android.location.Location
 import android.net.Uri
 import android.os.Bundle
 import android.provider.MediaStore
@@ -16,9 +17,16 @@ import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
 import androidx.core.content.FileProvider
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.flowWithLifecycle
+import androidx.lifecycle.lifecycleScope
+import com.google.android.gms.location.FusedLocationProviderClient
+import com.google.android.gms.location.LocationServices
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.launchIn
+import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.MediaType.Companion.toMediaTypeOrNull
@@ -26,11 +34,13 @@ import okhttp3.MultipartBody
 import okhttp3.RequestBody
 import okhttp3.RequestBody.Companion.asRequestBody
 import okhttp3.RequestBody.Companion.toRequestBody
+import tia.sarwoedhi.storyapp.R
 import tia.sarwoedhi.storyapp.core.data.entities.response.BaseResponse
 import tia.sarwoedhi.storyapp.databinding.ActivityAddStoryBinding
 import tia.sarwoedhi.storyapp.ui.main.MainActivity
 import tia.sarwoedhi.storyapp.utils.FileFunction
 import tia.sarwoedhi.storyapp.utils.UiState
+import tia.sarwoedhi.storyapp.utils.Utils
 import java.io.File
 
 @AndroidEntryPoint
@@ -42,7 +52,15 @@ class AddStoryActivity : AppCompatActivity() {
     private var photoFile: File? = null
     private lateinit var imageMultipart: MultipartBody.Part
     private lateinit var description: RequestBody
-    private var descriptionTeks = ""
+    private lateinit var latitudeRequestBody: RequestBody
+    private lateinit var longitudeRequestBody: RequestBody
+    private var descriptionText = ""
+
+    private val fusedLocationClient: FusedLocationProviderClient by lazy {
+        LocationServices.getFusedLocationProviderClient(this)
+    }
+    private var latitude: Double = 0.0
+    private var longitude: Double = 0.0
 
     companion object {
         private val REQUIRED_PERMISSIONS = arrayOf(Manifest.permission.CAMERA)
@@ -53,7 +71,7 @@ class AddStoryActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         binding = ActivityAddStoryBinding.inflate(layoutInflater)
         setContentView(binding.root)
-        supportActionBar?.title = "Story"
+        supportActionBar?.title = getString(R.string.add_story)
 
         binding.btnAddCamera.setOnClickListener { startTakePhoto() }
         binding.btnAddGallery.setOnClickListener { startGallery() }
@@ -61,6 +79,7 @@ class AddStoryActivity : AppCompatActivity() {
         binding.btnUpload.setOnClickListener {
             addStory()
         }
+        getLatestLocation()
     }
 
     override fun onRequestPermissionsResult(
@@ -120,8 +139,8 @@ class AddStoryActivity : AppCompatActivity() {
             }
 
             override fun onTextChanged(p0: CharSequence?, p1: Int, p2: Int, p3: Int) {
-                descriptionTeks = p0.toString()
-                setMyButtonEnable(descriptionTeks)
+                descriptionText = p0.toString()
+                setMyButtonEnable(descriptionText)
             }
 
             override fun afterTextChanged(p0: Editable?) {
@@ -132,8 +151,11 @@ class AddStoryActivity : AppCompatActivity() {
             CoroutineScope(Dispatchers.Main).launch {
                 convertFile()
                 if (photoFile != null && imageMultipart.body.contentType() != null) {
-                    addViewModel.addStory(imageMultipart, description)
-                        .observe(this@AddStoryActivity, ::addResponse)
+                    addViewModel.addStory(imageMultipart, description, latitude = latitudeRequestBody, longitude = longitudeRequestBody)
+
+                    addViewModel.addState.flowWithLifecycle(lifecycle, Lifecycle.State.STARTED)
+                        .onEach { addResponse(it) }
+                        .launchIn(lifecycleScope)
                 } else {
                     Toast.makeText(
                         this@AddStoryActivity,
@@ -148,14 +170,17 @@ class AddStoryActivity : AppCompatActivity() {
 
     private fun convertFile() {
         val file = FileFunction.reduceFileImage(photoFile as File)
-        val descriptionText = descriptionTeks
+        val descriptionText = descriptionText
         description = descriptionText.toRequestBody("text/plain".toMediaType())
+        latitudeRequestBody = latitude.toString().toRequestBody("text/plain".toMediaType())
+        longitudeRequestBody = longitude.toString().toRequestBody("text/plain".toMediaType())
         val requestImageFile = file.asRequestBody("image/jpeg".toMediaTypeOrNull())
         imageMultipart = MultipartBody.Part.createFormData(
             "photo",
             file.name,
             requestImageFile
         )
+
     }
 
     private fun startTakePhoto() {
@@ -176,8 +201,9 @@ class AddStoryActivity : AppCompatActivity() {
 
 
     private fun setMyButtonEnable(description: String) {
-        convertFile()
-        binding.btnUpload.isEnabled = description.isNotEmpty() && photoFile != null
+        val valid = description.isNotEmpty() && photoFile != null
+        if (valid) convertFile()
+        binding.btnUpload.isEnabled = valid
     }
 
     private val launcherIntentCamera = registerForActivityResult(
@@ -186,7 +212,7 @@ class AddStoryActivity : AppCompatActivity() {
         if (it.resultCode == RESULT_OK) {
             val myFile = File(currentPhotoPath)
             photoFile = myFile
-            setMyButtonEnable(descriptionTeks)
+            setMyButtonEnable(descriptionText)
             val result = BitmapFactory.decodeFile(photoFile?.path)
             binding.ivPreview.setImageBitmap(result)
         }
@@ -207,9 +233,40 @@ class AddStoryActivity : AppCompatActivity() {
             val selectedImg: Uri = result.data?.data as Uri
             val myFile = FileFunction.uriToFile(selectedImg, this@AddStoryActivity)
             photoFile = myFile
-            setMyButtonEnable(descriptionTeks)
+            setMyButtonEnable(descriptionText)
             binding.ivPreview.setImageURI(selectedImg)
         }
     }
 
+    private fun getLatestLocation() {
+        if (ContextCompat.checkSelfPermission(
+                this.applicationContext,
+                Manifest.permission.ACCESS_FINE_LOCATION
+            ) == PackageManager.PERMISSION_GRANTED
+        ) {
+            fusedLocationClient.lastLocation
+                .addOnSuccessListener { location: Location? ->
+                    location?.let {
+                        latitude = it.latitude
+                        longitude = it.longitude
+
+                        Utils.getAddressName(applicationContext, it.latitude, it.longitude)
+                            ?.let { addr ->
+                                binding.locationEditText.setText(addr)
+                            }
+                    }
+                }
+        } else {
+            requestPermissionLauncher.launch(Manifest.permission.ACCESS_FINE_LOCATION)
+        }
+    }
+
+    private val requestPermissionLauncher =
+        registerForActivityResult(
+            ActivityResultContracts.RequestPermission()
+        ) { isGranted: Boolean ->
+            if (isGranted) {
+                getLatestLocation()
+            }
+        }
 }
